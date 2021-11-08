@@ -1,0 +1,121 @@
+---
+title: "esm_206_lab7_sr"
+author: "Sarah Rohlfing"
+date: "11/8/2021"
+output: html_document
+---
+
+```{r setup, include=TRUE, warning = FALSE, message = FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(palmerpenguins)
+library(GGally)
+library(broom)
+library(kableExtra)
+library(modelsummary)
+library(stargazer)
+
+```
+
+intro to ggpairs
+
+to create a pairs plot
+
+```{r}
+ggpairs(penguins)
+```
+
+```{r}
+penguins %>% 
+  select(species, bill_length_mm:body_mass_g) %>% 
+  ggpairs(aes(color = species))
+
+ggplot(data= penguins, aes(x = bill_depth_mm, y = body_mass_g, group = species))+
+  geom_point(aes(color = species))+
+  geom_smooth(method = "lm")
+```
+multiple linear regression, penguins
+use multiple linear regression to try to understand the relationship between multiple predictor variables and a single continuous outcome variable(body mass)
+
+```{r}
+penguin_lm <- lm(body_mass_g ~ flipper_length_mm + bill_depth_mm, data = penguins)
+penguin_lm
+```
+for every 1 mm increase in flipper length we can expect on average increase of  51.54g in body mass, considering all other variables remain constant
+
+use the summary function to get more info
+
+```{r}
+summary(penguin_lm)
+```
+
+adjusted R-squared: 75 percent of the varience in our penguin body mass is explained in this model. 24 percent in varience that is not explained by our model. not good or bad. just a number telling us how much is explained
+
+p-value od 2.2e-16, yes this model is doing a better job including these variables
+
+use broom functions tidy and glance
+
+broom: get coefficient summary in a data frame
+broom::glance: get model summary in a data frame
+
+```{r}
+penguin_lm_tidy<- tidy(penguin_lm)
+penguin_lm_tidy
+```
+
+using in-line code to refer to bill depth coefficient
+
+`r penguin_lm_tidy$estimate[3]` put curser on it, hit cnrt, enter
+
+```{r}
+penguin_lm_glance <- glance(penguin_lm)
+penguin_lm_glance
+```
+## try another model
+thought hard, did a lit review, consulted with experts, deeply explored data, decided three most critical variables to include are:
+flipper length
+species
+sex
+
+```{r}
+penguin_sex_species_lm <- lm(body_mass_g ~ flipper_length_mm + species + sex, data = penguins)
+penguin_sex_species_lm_tidy<- tidy(penguin_sex_species_lm)
+penguin_sex_species_lm_tidy
+penguin_sex_species_lm
+
+```
+
+
+ref: adelle, female
+
+mass(g) = -365.82 + 20.82(flipper_length_mm)- 87.63(chinstrap)+836.3(gentoo)+530.38(male)
+
+
+use broom augment
+```{r}
+augment(penguin_sex_species_lm)
+```
+
+## use plot to look at model diagnostics
+
+```{r}
+plot(penguin_sex_species_lm)
+```
+
+conceptual understanding and expertise allows me to responsibly determine that penguin species, sex, and flipper length are reasonable predictor variable (make sure you think about variables and diff variable combinations)
+diagnostic plots all check out for normality of residuals, homoscedacity, and no worriesome outliers(<<last one is not an assumption)
+
+##make output tables
+
+```{r}
+modelsummary(penguin_sex_species_lm)
+```
+
+using stargazer....stick to  model summary
+
+```{r, results = "asis"}
+stargazer(penguin_sex_species_lm, type = "html")
+```
+
+
